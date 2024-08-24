@@ -8,9 +8,9 @@ services:
     volumes:
       - ./src:/app/src
       - ~/.npmrc:/app/.npmrc
-    ports:
-      - 5000:5000
-      - 9229:9229
+    # ports:
+    #   - 5000:5000
+    #   - 9229:9229
     # depends_on:
     #   postgres:
     #     condition: service_healthy

@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  main:
+    container_name: backend
+    build:
+      context: .
+    volumes:
+      - ./src:/app/src
+      - ~/.npmrc:/app/.npmrc
+    ports:
+      - 5000:5000
+      - 9229:9229
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
+    restart: always
+  # postgres:
+  #   container_name: postgres
+  #   image: postgres:14
+  #   privileged: true
+  #   environment:
+  #     PG_DATA: /pgdata
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
+  #     POSTGRES_DB: ${DB_NAME}
+  #     POSTGRES_USER: ${DB_USER}
+  #   ports:
+  #     - 5432:5432
+  #   volumes:
+  #     - ./.postgres:/pgdata
+  #   restart: always
+  #   healthcheck:
+  #     test: PGPASSWORD=leaddetector psql -U leaddetector -p 5432 -h 127.0.0.1 -c 'select 1' >/dev/null

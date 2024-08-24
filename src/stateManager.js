@@ -229,7 +229,7 @@ const stateManager = (bot) => {
                                 }
                                 break;
                             default:
-                                await bot.sendMessage(chatId, "Выбери комманду!", {parse_mode : "HTML", ...mainButtons});
+                                await bot.sendMessage(chatId, "Выбери комманду!", {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: permision})});
                                 break;
                         }
                         break;

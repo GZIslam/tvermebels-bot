@@ -211,6 +211,7 @@ const stateManager = (bot) => {
                                     updateUser(chatId, {step: user.step + 1});
                                 } else {
                                     let resFormula = user.formula.formula || "";
+                                    console.log(user.formula)
                                     Object.keys(variables).forEach(v => resFormula = resFormula.replaceAll(v, variables[v].value));
                                     await bot.sendMessage(chatId, `Стоимость приблизительно"${chats[chatId].formula.name}" составит:\n${eval(resFormula)} рублей`);
                                     updateUser(chatId, {status: "home"});

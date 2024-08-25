@@ -11,12 +11,7 @@ const stateManager = (bot) => {
     const items = {};
     const formulas = {};
     const type = "keyboard";
-    const getUser = (msg) => {
-        const chatId = msg.chat.id;
-        const permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
-        chats[chatId] ? chats[chatId].permision = permision : chats[chatId] = {permision};
-        return chats[chatId];
-    }
+    const getUser = (chatId) => chats[chatId];
     const updateUser = (chatId, data) => {
         const user = chats[chatId];
         if(user){
@@ -58,12 +53,14 @@ const stateManager = (bot) => {
         // console.log(msg)
         const text = msg.text;
         const chatId = msg.chat.id;
-        const user = getUser(msg);
+        const user = getUser(chatId);
         if(!user) {
             const {question, buttons, answer} = generateStartQuestion(false, type);
             await bot.sendMessage(chatId, question, {parse_mode : "HTML", ...buttons});
             updateUser(chatId, {question, buttons, answer, authorized: false});
         } else {
+            const permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
+            updateUser(chatId, {permision})
             if(!user.authorized) {
                 if(text != user.answer) {
                     await bot.sendMessage(chatId, user.question, {parse_mode : "HTML", ...user.buttons});

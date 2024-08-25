@@ -13,7 +13,8 @@ const stateManager = (bot) => {
     const type = "keyboard";
     const getUser = (msg) => {
         const chatId = msg.chat.id;
-        chats[chatId].permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
+        const permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
+        chats[chatId] ? chats[chatId].permision = permision : chats[chatId] = {permision};
         return chats[chatId];
     }
     const updateUser = (chatId, data) => {

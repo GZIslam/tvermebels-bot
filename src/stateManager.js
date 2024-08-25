@@ -56,11 +56,10 @@ const stateManager = (bot) => {
         const user = getUser(chatId);
         if(!user) {
             const {question, buttons, answer} = generateStartQuestion(false, type);
-            await bot.sendMessage(chatId, question, {parse_mode : "HTML", ...buttons});
-            updateUser(chatId, {question, buttons, answer, authorized: false});
-        } else {
             const permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
-            updateUser(chatId, {permision})
+            await bot.sendMessage(chatId, question, {parse_mode : "HTML", ...buttons});
+            updateUser(chatId, {question, buttons, answer, authorized: false, permision});
+        } else {
             if(!user.authorized) {
                 if(text != user.answer) {
                     await bot.sendMessage(chatId, user.question, {parse_mode : "HTML", ...user.buttons});
@@ -177,12 +176,12 @@ const stateManager = (bot) => {
                                         break;
                                     case "description":
                                         user.formula.description = text;
-                                        await bot.sendMessage(chatId, `Описание:\n${user.formula.description}\nТеперь напишите Имя для переменной ${variablesName[user.formula.variable_index]}`);
+                                        await bot.sendMessage(chatId, `Описание:\n${user.formula.description}\nТеперь напишите Имя для переменной "${variablesName[user.formula.variable_index]}"`);
                                         user.step = "variable";
                                         break;
                                     case "variable":
                                         user.formula.variables[variablesName[user.formula.variable_index]] = {name: text};
-                                        await bot.sendMessage(chatId, `Название для переменной ${variablesName[user.formula.variable_index]}: ${text}\nВыберете дальнейшее действие`, {parse_mode: "HTML", ...addVariables()}); 
+                                        await bot.sendMessage(chatId, `Название для переменной "${variablesName[user.formula.variable_index]}": ${text}\nВыберете дальнейшее действие`, {parse_mode: "HTML", ...addVariables()}); 
                                         user.step = "next_action";
                                         user.formula.variable_index = user.formula.variable_index + 1;
                                         break;
@@ -192,7 +191,7 @@ const stateManager = (bot) => {
                                         break;
                                     case "next_action":
                                         if(text === nameMap.addVariable) {
-                                            await bot.sendMessage(chatId, `Напишите Имя для переменной ${variablesName[user.formula.variable_index]}`);
+                                            await bot.sendMessage(chatId, `Напишите Имя для переменной "${variablesName[user.formula.variable_index]}"`);
                                             user.step = "variable";
                                         } else if (text === nameMap.finish) {
                                             await bot.sendMessage(chatId, `Теперь напишите формулу используя заданные переменные (${Object.keys(user.formula.variables).join(", ")})\nнапример так: (A + B) * C`);

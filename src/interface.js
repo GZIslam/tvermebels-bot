@@ -10,6 +10,7 @@ const nameMap = {
     "addFormula": "Добавить формулу",
     "addVariable": "Добавить переменную",
     "finish": "Готово",
+    "admin": "#7799ADMIN9977#",
     "start": "/start",
 }
 

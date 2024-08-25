@@ -11,7 +11,10 @@ const stateManager = (bot) => {
     const items = {};
     const formulas = {};
     const type = "keyboard";
-    const getUser = (chatId) => chats[chatId];
+    const getUser = (chatId) => {
+        chats[chatId].permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
+        return chats[chatId];
+    }
     const updateUser = (chatId, data) => {
         const user = getUser(chatId);
         if(user){
@@ -64,15 +67,18 @@ const stateManager = (bot) => {
                     await bot.sendMessage(chatId, user.question, {parse_mode : "HTML", ...user.buttons});
                 }
                 if(user.answer == text) {
-                    const permision = admins.includes(msg.from.id) ? 700 : 0;
-                    await bot.sendMessage(chatId, "Правильно!\nВы вошли.", {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: permision})});
+                    await bot.sendMessage(chatId, "Правильно!\nВы вошли.", {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: user.permision})});
                     delete chats[chatId].question;
                     delete chats[chatId].answer;
                     delete chats[chatId].buttons;
-                    updateUser(chatId, {authorized: true, status: "home", name: msg.from.username, permision});
+                    updateUser(chatId, {authorized: true, status: "home", name: msg.from.username});
                 }
             } else {
                 switch (text) {
+                    case nameMap.admin:
+                        await bot.sendMessage(chatId, "Введите id или username пользователя для добавления в список Admin");
+                        updateUser(chatId, {status: "addAdmin"});
+                        break;
                     case nameMap.editItems:
                         await bot.sendMessage(chatId, "Тут вы можете изменить ваше главное меню в приложении.", {parse_mode : "HTML", ...editItems(type)});
                         break;
@@ -238,8 +244,13 @@ const stateManager = (bot) => {
                                     await bot.sendMessage(chatId, "Неправильно!\nОЧКИ: " + chats[chatId].score + "\n" + chats[chatId].question, {parse_mode : "HTML", ...chats[chatId].buttons});
                                 }
                                 break;
+                            case "addAdmin":
+                                isNumber(+text) ? admins.push(+text) : admins.push(text);
+                                await bot.sendMessage(chatId, `Admin (${text}) успешно добавлен`);
+                                updateUser(chatId, {status: "home"});
+                                break;
                             default:
-                                await bot.sendMessage(chatId, "Выбери комманду!", {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: permision})});
+                                await bot.sendMessage(chatId, "Выбери комманду!", {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: user.permision})});
                                 break;
                         }
                         break;

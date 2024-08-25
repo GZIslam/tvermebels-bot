@@ -207,11 +207,11 @@ const stateManager = (bot) => {
                                 }
                                 variables[Object.keys(variables)[user.step]].value = text;
                                 const variable = Object.keys(variables)[user.step];
-                                await bot.sendMessage(chatId, `${variables[variable].name} задана!`);
+                                await bot.sendMessage(chatId, `${variables[variable].name} задан/задана/задано!`);
                                 
                                 if(Object.keys(variables).length > user.step + 1) {
                                     const nextVariable = Object.keys(variables)[user.step + 1];
-                                    await bot.sendMessage(chatId, `"${variables[nextVariable].name}" равна/равен/равно = ?`);
+                                    await bot.sendMessage(chatId, `"${variables[nextVariable].name}" равен/равна/равно = ?`);
                                     updateUser(chatId, {step: user.step + 1});
                                 } else {
                                     // let resFormula = user.formula.formula || "";

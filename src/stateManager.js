@@ -41,7 +41,7 @@ const stateManager = (bot) => {
                 if(formulas.length < 1) {
                     await bot.sendMessage(chatId, "Ошибка");
                 } else {
-                    await bot.sendMessage(chatId, `Вы выбрали:\n${route[1]}\n${formulas[route[1]]}\nУверены, что хотите удалить?`, {parse_mode : "HTML", ...confirmation(type)});
+                    await bot.sendMessage(chatId, `Вы выбрали:\n${route[1]}\n${formulas[route[1]].description}\nУверены, что хотите удалить?`, {parse_mode : "HTML", ...confirmation(type)});
                     updateUser(chatId, {removeFormulaIndex: route[1]});
                 }
                 break;
@@ -128,7 +128,7 @@ const stateManager = (bot) => {
                             delete items[user.removeItemIndex];
                             await bot.sendMessage(chatId, `Вы удалили ${user.removeItemIndex}.`, {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: user.permision})});
                         } else if(user.removeFormulaIndex){
-                            delete items[user.removeFormulaIndex];
+                            delete formulas[user.removeFormulaIndex];
                             await bot.sendMessage(chatId, `Вы удалили ${user.removeFormulaIndex}.`, {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: user.permision})});
                         }
                         delete chats[chatId].removeItemIndex
@@ -210,7 +210,7 @@ const stateManager = (bot) => {
                                     await bot.sendMessage(chatId, `"${variables[nextVariable].name}" равна/равен = ?`);
                                     updateUser(chatId, {step: user.step + 1});
                                 } else {
-                                    let resFormula = user.formula.formula;
+                                    let resFormula = user.formula.formula || "";
                                     Object.keys(variables).forEach(v => resFormula = resFormula.replaceAll(v, variables[v].value));
                                     await bot.sendMessage(chatId, `Стоимость приблизительно"${chats[chatId].formula.name}" составит:\n${eval(resFormula)} рублей`);
                                     updateUser(chatId, {status: "home"});

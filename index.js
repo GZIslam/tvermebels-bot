@@ -1,7 +1,7 @@
 require('dotenv').config();
 const bot_token = process.env.BOT_TOKEN;
 const TelegramBot = require("node-telegram-bot-api");
-const {commands} = require("./src/interface");
+const { commands } = require("./src/interface");
 const stateManager = require("./src/stateManager");
 
 const launchBot = () => {

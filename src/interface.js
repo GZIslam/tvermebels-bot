@@ -10,29 +10,38 @@ const nameMap = {
     "addFormula": "Добавить формулу",
     "addVariable": "Добавить переменную",
     "finish": "Готово",
-    "admin": "#7799ADMIN9977#",
+    "admin": "Меню Админа",
+    "game": "/game",
+    "addAdmin": "Сделать Админом",
+    "showAdmins": "Список Адинов",
+    "removeAdmin": "Убрать права Админа",
+    "removeChats": "Удалить все чаты (обновить)",
+    "users": "Пользователи",
+    "id": "/id",
     "start": "/start",
 }
 
-const createButtons = (buttons, type = "keyboard") => {
+const createButtons = (buttons, type = "keyboard", game = false) => {
+    let keyboard = buttons.map(b => {
+        const res = {text: b};
+        if(type !== "keyboard") {
+            if(b.callback_data) {
+                return [b];
+            } else {
+                return [{callback_data: b, text: b}];
+            }
+        };
+        return [res]
+    });
+    if(game) keyboard = [[...keyboard[0], ...keyboard[1]], [...keyboard[2], ...keyboard[3]], [...keyboard[4]]];
     return {
         reply_markup: JSON.stringify({
-            [type]: buttons.map(b => {
-                const res = {text: b};
-                if(type !== "keyboard") {
-                    if(b.callback_data) {
-                        return [b];
-                    } else {
-                        return [{callback_data: b, text: b}];
-                    }
-                };
-                return [res]
-            })
+            [type]: keyboard
         })
     };
 };
 
-const generateStartQuestion = (flag = false, type) => {
+const generateStartQuestion = (flag = false, type, game) => {
     const a = Math.ceil(Math.random() * 10);
     const b = Math.ceil(Math.random() * 10);
     const c = a + b;
@@ -47,18 +56,22 @@ const generateStartQuestion = (flag = false, type) => {
     const index = Math.random() > 0.5 ? 3 - randomIndex : randomIndex
     buttons[0] = buttons[index];
     buttons[index] = c;
-    const keyboard = [buttons[0], buttons[1], buttons[2], buttons[3]];
-    if(flag) keyboard.push(nameMap.back);
+    const keyboard = [buttons[0], buttons[1], buttons[2], buttons[3]]
+    if(flag) {
+        keyboard.push(nameMap.cancel);
+    }
     return {
         answer: c,
         question: `${flag ? "" : "Чтобы начать пройдите тест"}\nСколько будет ${a} + ${b} = ?`,
-        buttons: createButtons(keyboard, type)
+        buttons: createButtons(keyboard, type, game)
     }
 };
 
 const mainButtons = ({list = [], type, permision}) => {
     const buttons = [...list, nameMap.showFormulas];
-    if(permision > 300) buttons.push(nameMap.editItems)
+    if(permision >= 300) buttons.push(nameMap.editItems);
+    if(permision >= 700) buttons.push(nameMap.admin);
+
     return createButtons(
         buttons,
         type
@@ -83,7 +96,7 @@ const confirmation = (type) => createButtons(
 );
 
 const formulasButtons = ({list = [], type, permision}) => {
-    if(permision > 300) list.push(nameMap.editFormulas)
+    if(permision >= 300) list.push(nameMap.editFormulas)
     list.push(nameMap.cancel)
     return createButtons(
         list,
@@ -100,6 +113,17 @@ const editFormulas = (type) => createButtons(
     type
 );
 
+const adminButtons = () => createButtons(
+    [
+        nameMap.showAdmins,
+        nameMap.addAdmin,
+        nameMap.removeAdmin,
+        nameMap.removeChats,
+        nameMap.users,
+    ],
+    "inline_keyboard",
+)
+
 const addVariables = (type) => createButtons(
     [
         nameMap.addVariable,
@@ -111,6 +135,8 @@ const addVariables = (type) => createButtons(
 
 const commands = [
     {command: nameMap.start, description: "Начать"},
+    {command: nameMap.id, description: "Мой ID"},
+    {command: nameMap.game, description: "Игра"},
 ];
 
 module.exports = {
@@ -119,6 +145,7 @@ module.exports = {
     mainButtons,
     nameMap,
     editItems,
+    adminButtons,
     confirmation,
     formulasButtons,
     editFormulas,

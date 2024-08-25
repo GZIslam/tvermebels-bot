@@ -1,13 +1,13 @@
-const { generateStartQuestion, mainButtons, nameMap, createButtons, confirmation, editItems, formulasButtons, editFormulas, addVariables } = require("./interface");
+const { generateStartQuestion, mainButtons, nameMap, createButtons, confirmation, editItems, formulasButtons, editFormulas, addVariables, adminButtons } = require("./interface");
 const variablesName = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
-const admins = [860131994];
+const admins = {"860131994": 777};
 
 const isNumber = (num) => {
 	return typeof num === 'number' && !isNaN(num);
 }
 
 const stateManager = (bot) => {
-    const chats = {};
+    let chats = {};
     const items = {};
     const formulas = {};
     const type = "keyboard";
@@ -22,12 +22,23 @@ const stateManager = (bot) => {
         return user;
     };
 
+    const checkPermision = (chatId, level) => {
+        const user = getUser(chatId);
+        if(!user) return false;
+        if(user.permision >= level) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     const onCallbackQuery = async (msg) => {
         // console.log(msg)
         const data = msg.data;
         const chatId = msg.message.chat.id;
         const route = data.split("_");
-        if(!chats[chatId]) return
+        const user = getUser(chatId);
+        if(!user) return
         switch (route[0]) {
             case "removeItems":
                 if(items.length < 1) {
@@ -45,7 +56,45 @@ const stateManager = (bot) => {
                     updateUser(chatId, {removeFormulaIndex: route[1]});
                 }
                 break;
-            default:
+        }
+        switch (data) {
+            case nameMap.addAdmin:
+                if(checkPermision(chatId, 700)) {
+                    await bot.sendMessage(chatId, "Добавить права Админа (ID LEVEL)");
+                    updateUser(chatId, {status: "addAdmin"});
+                } else {
+                    await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                }
+                break;
+            case nameMap.removeAdmin:
+                if(checkPermision(chatId, 700)) {
+                    await bot.sendMessage(chatId, "Удалить права Админа (ID)");
+                    updateUser(chatId, {status: "removeAdmin"});
+                } else {
+                    await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                }
+                break;
+            case nameMap.showAdmins:
+                if(checkPermision(chatId, 700)) {
+                    await bot.sendMessage(chatId, `Admins:\n${JSON.stringify(admins)}`);
+                } else {
+                    await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                }
+                break;
+            case nameMap.users:
+                if(checkPermision(chatId, 700)) {
+                    await bot.sendMessage(chatId, `Users:\n${Object.keys(chats).map((c, i) =>`${i+1}. ID: ${chats[c].id} (${chats[c].name})`).join("\n")}`);
+                } else {
+                    await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                }
+                break;
+            case nameMap.removeChats:
+                if(checkPermision(chatId, 700)) {
+                    chats = {};
+                    await bot.sendMessage(chatId, `Все чаты удалены!`);
+                } else {
+                    await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                }
                 break;
         }
     }
@@ -56,7 +105,7 @@ const stateManager = (bot) => {
         const user = getUser(chatId);
         if(!user) {
             const {question, buttons, answer} = generateStartQuestion(false, type);
-            const permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
+            const permision = admins[msg.from.id] || 1;
             await bot.sendMessage(chatId, question, {parse_mode : "HTML", ...buttons});
             updateUser(chatId, {question, buttons, answer, authorized: false, permision});
         } else {
@@ -69,49 +118,79 @@ const stateManager = (bot) => {
                     delete chats[chatId].question;
                     delete chats[chatId].answer;
                     delete chats[chatId].buttons;
-                    updateUser(chatId, {authorized: true, status: "home", name: msg.from.username});
+                    updateUser(chatId, {authorized: true, status: "home", id: msg.from.id, name: msg.from.username || `Нету username(${msg.from.id})`});
                 }
             } else {
                 switch (text) {
                     case nameMap.admin:
-                        await bot.sendMessage(chatId, "Введите id или username пользователя для добавления в список Admin");
-                        updateUser(chatId, {status: "addAdmin"});
+                        if(checkPermision(chatId, 700)) {
+                            await bot.sendMessage(chatId, "Панель Админа", {parse_mode : "HTML", ...adminButtons()});
+                        } else {
+                            await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                        }
                         break;
                     case nameMap.editItems:
-                        await bot.sendMessage(chatId, "Тут вы можете изменить ваше главное меню в приложении.", {parse_mode : "HTML", ...editItems(type)});
+                        if(checkPermision(chatId, 300)) {
+                            await bot.sendMessage(chatId, "Тут вы можете изменить ваше главное меню в приложении.", {parse_mode : "HTML", ...editItems(type)});
+                        } else {
+                            await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                        }
                         break;
                     case nameMap.removeItem:
-                        if(Object.keys(items).length < 1) {
-                            await bot.sendMessage(chatId, "У вас пока нету ITEMS!", {parse_mode : "HTML", ...editItems(type)});
+                        if(checkPermision(chatId, 300)) {
+                            if(Object.keys(items).length < 1) {
+                                await bot.sendMessage(chatId, "У вас пока нету ITEMS!", {parse_mode : "HTML", ...editItems(type)});
+                            } else {
+                                await bot.sendMessage(chatId, "Ваши ITEMS:\nВыберите то, что хотите удалить.", {parse_mode : "HTML", ...createButtons(Object.keys(items).map(i => ({callback_data: "removeItems_" + i, text: i})), "inline_keyboard")});
+                            }
                         } else {
-                            await bot.sendMessage(chatId, "Ваши ITEMS:\nВыберите то, что хотите удалить.", {parse_mode : "HTML", ...createButtons(Object.keys(items).map(i => ({callback_data: "removeItems_" + i, text: i})), "inline_keyboard")});
+                            await bot.sendMessage(chatId, "У вас недостаточно прав!");
                         }
                         break;
                     case nameMap.addItem:
-                        await bot.sendMessage(chatId, "Введите название нового ITEM.");
-                        updateUser(chatId, {status: "addItem", step: "name"});
+                        if(checkPermision(chatId, 300)) {
+                            await bot.sendMessage(chatId, "Введите название нового ITEM.");
+                            updateUser(chatId, {status: "addItem", step: "name"});
+                        } else {
+                            await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                        }
                         break;
                     case nameMap.showFormulas:
                         await bot.sendMessage(chatId, "Расчет стоимости.\nВыберите тот вариант, который подходит вам.", {parse_mode : "HTML", ...formulasButtons({list: Object.keys(formulas), type, permision: user.permision})});
                         break;
                     case nameMap.editFormulas:
-                        await bot.sendMessage(chatId, "Тут вы можете добавлять/удалять формулы в приложении.", {parse_mode : "HTML", ...editFormulas(type)});
-                        break;
-                    case nameMap.addFormula:
-                        await bot.sendMessage(chatId, "Введите название новой Формулы.");
-                        updateUser(chatId, {status: "addFormula", step: "name"});
-                        break;
-                    case nameMap.removeFormula:
-                        if(Object.keys(formulas).length < 1) {
-                            await bot.sendMessage(chatId, "У вас пока нету Формул!", {parse_mode : "HTML", ...editFormulas(type)});
+                        if(checkPermision(chatId, 300)) {
+                            await bot.sendMessage(chatId, "Тут вы можете добавлять/удалять формулы в приложении.", {parse_mode : "HTML", ...editFormulas(type)});
                         } else {
-                            await bot.sendMessage(chatId, "Ваши Формулы:\nВыберите то, что хотите удалить.", {parse_mode : "HTML", ...createButtons(Object.keys(formulas).map(i => ({callback_data: "removeFormulas_" + i, text: i})), "inline_keyboard")});
+                            await bot.sendMessage(chatId, "У вас недостаточно прав!");
                         }
                         break;
-                    case nameMap.dev:
-                        const {question, buttons, answer} = generateStartQuestion(true, type);
+                    case nameMap.addFormula:
+                        if(checkPermision(chatId, 300)) {
+                            await bot.sendMessage(chatId, "Введите название новой Формулы.");
+                            updateUser(chatId, {status: "addFormula", step: "name"});
+                        } else {
+                            await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                        }
+                        break;
+                    case nameMap.removeFormula:
+                        if(checkPermision(chatId, 300)) {
+                            if(Object.keys(formulas).length < 1) {
+                                await bot.sendMessage(chatId, "У вас пока нету Формул!", {parse_mode : "HTML", ...editFormulas(type)});
+                            } else {
+                                await bot.sendMessage(chatId, "Ваши Формулы:\nВыберите то, что хотите удалить.", {parse_mode : "HTML", ...createButtons(Object.keys(formulas).map(i => ({callback_data: "removeFormulas_" + i, text: i})), "inline_keyboard")});
+                            }
+                        } else {
+                            await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                        }
+                        break;
+                    case nameMap.game:
+                        const {question, buttons, answer} = generateStartQuestion(true, type, true);
                         await bot.sendMessage(chatId, "Автогенерация (сумма)\n" + question, {parse_mode : "HTML", ...buttons});
-                        updateUser(chatId, {question, buttons, answer, ...chats[chatId], status: "dev"});
+                        updateUser(chatId, {question, buttons, answer, ...chats[chatId], status: "game"});
+                        break;
+                    case nameMap.id:
+                        await bot.sendMessage(chatId, `Ваш ID: ${user.id}`, {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: user.permision})});
                         break;
                     case nameMap.cancel:
                     case nameMap.start:
@@ -223,14 +302,14 @@ const stateManager = (bot) => {
                                     delete chats[chatId].formula;
                                 }
                                 break;
-                            case "dev":
+                            case "game":
                                 if(text == chats[chatId].answer) {
                                     if(chats[chatId].score !== undefined) {
                                         chats[chatId].score += 1;
                                     } else {
                                         chats[chatId].score = 1;
                                     }
-                                    const {question, buttons, answer} = generateStartQuestion(true, type);
+                                    const {question, buttons, answer} = generateStartQuestion(true, type, true);
                                     await bot.sendMessage(chatId, "Правильно!\nОЧКИ: " + chats[chatId].score + "\n" + question, {parse_mode : "HTML", ...buttons});
                                     chats[chatId] = {...chats[chatId], question, buttons, answer}
                                 } else {
@@ -243,9 +322,35 @@ const stateManager = (bot) => {
                                 }
                                 break;
                             case "addAdmin":
-                                isNumber(+text) ? admins.push(+text) : admins.push(text);
-                                await bot.sendMessage(chatId, `Admin (${text}) успешно добавлен`);
-                                updateUser(chatId, {status: "home"});
+                                if(checkPermision(chatId, 700)) {
+                                    const [user, level] = text.split(" ");
+                                    admins[user] = level;
+                                    await bot.sendMessage(chatId, `Admin ${user} с уровнем ${level} успешно добавлен`);
+                                    Object.keys(chats).forEach(c => {
+                                        if(chats[c].id == user) {
+                                            chats[c].permision = level;
+                                        }
+                                    });
+                                    updateUser(chatId, {status: "home"});
+                                } else {
+                                    await bot.sendMessage(chatId, "У вас недостаточно прав!");
+                                }
+                                break;
+                            case "removeAdmin":
+                                if(checkPermision(chatId, 700)) {
+                                    if(chats[text]) {
+                                        Object.keys(chats).forEach(c => {
+                                            if(chats[c].id == text) {
+                                                chats[c].permision = 1;
+                                            }
+                                        });
+                                        delete admins[text];
+                                        await bot.sendMessage(chatId, `Admin (${text}) успешно удален`);
+                                    } else {
+                                        await bot.sendMessage(chatId, `Admin с id: ${text} не найден!`);
+                                    }
+                                    updateUser(chatId, {status: "home"});
+                                }
                                 break;
                             default:
                                 await bot.sendMessage(chatId, "Выбери комманду!", {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: user.permision})});

@@ -11,7 +11,8 @@ const stateManager = (bot) => {
     const items = {};
     const formulas = {};
     const type = "keyboard";
-    const getUser = (chatId) => {
+    const getUser = (msg) => {
+        const chatId = msg.chat.id;
         chats[chatId].permision = (admins.includes(msg.from.id) || admins.includes(msg.from.username)) ? 700 : 0;
         return chats[chatId];
     }
@@ -56,7 +57,7 @@ const stateManager = (bot) => {
         // console.log(msg)
         const text = msg.text;
         const chatId = msg.chat.id;
-        const user = getUser(chatId);
+        const user = getUser(msg);
         if(!user) {
             const {question, buttons, answer} = generateStartQuestion(false, type);
             await bot.sendMessage(chatId, question, {parse_mode : "HTML", ...buttons});

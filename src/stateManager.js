@@ -145,7 +145,7 @@ const stateManager = (bot) => {
                         } else if(Object.keys(formulas).includes(text)) {
                             user.formula = formulas[text];
                             const variables = user.formula.variables;
-                            await bot.sendMessage(chatId, `Вы выбрали ${formulas[text].name}:\n${formulas[text].description}\n\nДля того чтобы посчитать цену заполните параметры:\n"${variables[Object.keys(variables)[0]].name}" равна/равен = ?`);
+                            await bot.sendMessage(chatId, `Вы выбрали ${formulas[text].name}:\n${formulas[text].description}\n\nДля того чтобы посчитать цену заполните параметры:\n"${variables[Object.keys(variables)[0]].name}" равна/равен/равно = ?`);
                             updateUser(chatId, {status: "variable", step: 0});
                             return;
                         }
@@ -190,7 +190,7 @@ const stateManager = (bot) => {
                                             await bot.sendMessage(chatId, `Напишите Имя для переменной ${variablesName[user.formula.variable_index]}`);
                                             user.step = "variable";
                                         } else if (text === nameMap.finish) {
-                                            await bot.sendMessage(chatId, `Теперь напишите формулу используя заданные переменные (A, B, C...)\nнапример так: (A + B) * C`);
+                                            await bot.sendMessage(chatId, `Теперь напишите формулу используя заданные переменные (${Object.keys(user.formula.variables).join(", ")})\nнапример так: (A + B) * C`);
                                             user.step = "formula";
                                         }
                                         break;
@@ -207,13 +207,13 @@ const stateManager = (bot) => {
                                 
                                 if(Object.keys(variables).length > user.step + 1) {
                                     const nextVariable = Object.keys(variables)[user.step + 1];
-                                    await bot.sendMessage(chatId, `"${variables[nextVariable].name}" равна/равен = ?`);
+                                    await bot.sendMessage(chatId, `"${variables[nextVariable].name}" равна/равен/равно = ?`);
                                     updateUser(chatId, {step: user.step + 1});
                                 } else {
                                     // let resFormula = user.formula.formula || "";
                                     // Object.keys(variables).forEach(v => resFormula = resFormula.replaceAll(v, variables[v].value));
                                     let res = Object.keys(variables).map(v => `const ${v} = ${variables[v].value};`).join('\n');
-                                    await bot.sendMessage(chatId, `Стоимость приблизительно"${chats[chatId].formula.name}" составит:\n${eval(res + "\n" + user.formula.formula)} рублей`);
+                                    await bot.sendMessage(chatId, `Стоимость "${chats[chatId].formula.name}" приблизительно составит:\n${eval(res + "\n" + user.formula.formula)} рублей`);
                                     updateUser(chatId, {status: "home"});
                                     delete chats[chatId].step;
                                     delete chats[chatId].formula;

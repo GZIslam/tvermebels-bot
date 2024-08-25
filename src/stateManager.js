@@ -210,10 +210,10 @@ const stateManager = (bot) => {
                                     await bot.sendMessage(chatId, `"${variables[nextVariable].name}" равна/равен = ?`);
                                     updateUser(chatId, {step: user.step + 1});
                                 } else {
-                                    let resFormula = user.formula.formula || "";
-                                    console.log(user.formula)
-                                    Object.keys(variables).forEach(v => resFormula = resFormula.replaceAll(v, variables[v].value));
-                                    await bot.sendMessage(chatId, `Стоимость приблизительно"${chats[chatId].formula.name}" составит:\n${eval(resFormula)} рублей`);
+                                    // let resFormula = user.formula.formula || "";
+                                    // Object.keys(variables).forEach(v => resFormula = resFormula.replaceAll(v, variables[v].value));
+                                    let res = Object.keys(variables).map(v => `const ${v} = ${variables[v].value};`).join('\n');
+                                    await bot.sendMessage(chatId, `Стоимость приблизительно"${chats[chatId].formula.name}" составит:\n${eval(res + "\n" + user.formula.formula)} рублей`);
                                     updateUser(chatId, {status: "home"});
                                     delete chats[chatId].step;
                                     delete chats[chatId].formula;

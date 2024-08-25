@@ -17,7 +17,7 @@ const stateManager = (bot) => {
         return chats[chatId];
     }
     const updateUser = (chatId, data) => {
-        const user = getUser(chatId);
+        const user = chats[chatId];
         if(user){
             chats[chatId] = { ...user, ...data };
         } else {

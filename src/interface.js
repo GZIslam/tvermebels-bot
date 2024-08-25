@@ -10,6 +10,7 @@ const nameMap = {
     "addFormula": "Добавить формулу",
     "addVariable": "Добавить переменную",
     "finish": "Готово",
+    "start": "/start",
 }
 
 const createButtons = (buttons, type = "keyboard") => {
@@ -108,7 +109,7 @@ const addVariables = (type) => createButtons(
 );
 
 const commands = [
-    {command: "/start", description: "Начать"},
+    {command: nameMap.start, description: "Начать"},
 ];
 
 module.exports = {

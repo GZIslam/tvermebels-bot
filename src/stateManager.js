@@ -2,6 +2,10 @@ const { generateStartQuestion, mainButtons, nameMap, createButtons, confirmation
 const variablesName = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
 const admins = [860131994];
 
+const isNumber = (num) => {
+	return typeof num === 'number' && !isNaN(num);
+}
+
 const stateManager = (bot) => {
     const chats = {};
     const items = {};
@@ -106,6 +110,7 @@ const stateManager = (bot) => {
                         updateUser(chatId, {question, buttons, answer, ...chats[chatId], status: "dev"});
                         break;
                     case nameMap.cancel:
+                    case nameMap.start:
                         await bot.sendMessage(chatId, "Главное меню.", {parse_mode : "HTML", ...mainButtons({list: Object.keys(items), type, permision: user.permision})});
                         delete chats[chatId].score;
                         delete chats[chatId].item;
@@ -135,12 +140,12 @@ const stateManager = (bot) => {
                         break;
                     default:
                         if(Object.keys(items).includes(text)) {
-                            await bot.sendMessage(chatId, items[text])//, {parse_mode : "HTML", ...backButton});
+                            await bot.sendMessage(chatId, items[text]);
                             return;
                         } else if(Object.keys(formulas).includes(text)) {
                             user.formula = formulas[text];
                             const variables = user.formula.variables;
-                            await bot.sendMessage(chatId, `Вы выбрали ${formulas[text].name}:\n${formulas[text].description}\n\nДля того чтобы посчитать напишите - ${variables[Object.keys(variables)[0]].name}`)//, {parse_mode : "HTML", ...backButton});
+                            await bot.sendMessage(chatId, `Вы выбрали ${formulas[text].name}:\n${formulas[text].description}\n\nДля того чтобы посчитать цену заполните параметры:\n"${variables[Object.keys(variables)[0]].name}" равна/равен = ?`);
                             updateUser(chatId, {status: "variable", step: 0});
                             return;
                         }
@@ -149,12 +154,12 @@ const stateManager = (bot) => {
                                 switch (user.step) {
                                     case "name":
                                         user.item = {name: text};
-                                        await bot.sendMessage(chatId, `Название: ${user.item.name}\nТеперь задайте контент по нажатию`)//, {parse_mode : "HTML", ...backButton});
+                                        await bot.sendMessage(chatId, `Название: ${user.item.name}\nТеперь задайте контент по нажатию`);
                                         user.step = "content";
                                         break;
                                     case "content":
                                         user.item.content = text;
-                                        await bot.sendMessage(chatId, `Название: ${user.item.name}\nКонтент:\n${user.item.content}\nВсе верно?`, {parse_mode : "HTML", ...confirmation()})//, {parse_mode : "HTML", ...backButton});
+                                        await bot.sendMessage(chatId, `Название: ${user.item.name}\nКонтент:\n${user.item.content}\nВсе верно?`, {parse_mode : "HTML", ...confirmation()});
                                         break;
                                 }
                                 break;
@@ -162,27 +167,27 @@ const stateManager = (bot) => {
                                 switch (user.step) {
                                     case "name":
                                         user.formula = {name: text, variable_index: 0, variables: {}};
-                                        await bot.sendMessage(chatId, `Название: ${user.formula.name}\nТеперь напишите описание`);//, {parse_mode : "HTML", ...backButton});
+                                        await bot.sendMessage(chatId, `Название: ${user.formula.name}\nТеперь напишите описание`);
                                         user.step = "description";
                                         break;
                                     case "description":
                                         user.formula.description = text;
-                                        await bot.sendMessage(chatId, `Описание:\n${user.formula.description}\nТеперь напишите Имя для переменной ${variablesName[user.formula.variable_index]}`);//, {parse_mode : "HTML", ...backButton});
+                                        await bot.sendMessage(chatId, `Описание:\n${user.formula.description}\nТеперь напишите Имя для переменной ${variablesName[user.formula.variable_index]}`);
                                         user.step = "variable";
                                         break;
                                     case "variable":
                                         user.formula.variables[variablesName[user.formula.variable_index]] = {name: text};
-                                        await bot.sendMessage(chatId, `Название для переменной ${variablesName[user.formula.variable_index]}: ${text}\nВыберете дальнейшее действие`, {parse_mode: "HTML", ...addVariables()}); //, {parse_mode : "HTML", ...backButton});
+                                        await bot.sendMessage(chatId, `Название для переменной ${variablesName[user.formula.variable_index]}: ${text}\nВыберете дальнейшее действие`, {parse_mode: "HTML", ...addVariables()}); 
                                         user.step = "next_action";
                                         user.formula.variable_index = user.formula.variable_index + 1;
                                         break;
                                     case "formula":
                                         user.formula.formula = text;
-                                        await bot.sendMessage(chatId, `Формула: ${user.formula.formula}\nИмя: ${user.formula.name}\nОписание: ${user.formula.description}\nПеременные: ${JSON.stringify(user.formula.variables)}верно? `, {parse_mode: "HTML", ...confirmation()}); //, {parse_mode : "HTML", ...backButton});
+                                        await bot.sendMessage(chatId, `Формула: ${user.formula.formula}\nИмя: ${user.formula.name}\nОписание: ${user.formula.description}\nПеременные: ${JSON.stringify(user.formula.variables)}верно? `, {parse_mode: "HTML", ...confirmation()}); 
                                         break;
                                     case "next_action":
                                         if(text === nameMap.addVariable) {
-                                            await bot.sendMessage(chatId, `Напишите Имя для переменной ${variablesName[user.formula.variable_index]}`);//, {parse_mode : "HTML", ...backButton});
+                                            await bot.sendMessage(chatId, `Напишите Имя для переменной ${variablesName[user.formula.variable_index]}`);
                                             user.step = "variable";
                                         } else if (text === nameMap.finish) {
                                             await bot.sendMessage(chatId, `Теперь напишите формулу используя заданные переменные (A, B, C...)\nнапример так: (A + B) * C`);
@@ -193,19 +198,23 @@ const stateManager = (bot) => {
                                 break;
                             case "variable":
                                 const variables = user.formula.variables;
-                                // TODO check on Number
+                                if(!isNumber(+text)) {
+                                    return await bot.sendMessage(chatId, `Введите пожалуйста число, "${text}" - не число`);
+                                }
                                 variables[Object.keys(variables)[user.step]].value = text;
                                 const variable = Object.keys(variables)[user.step];
                                 await bot.sendMessage(chatId, `${variables[variable].name} задана!`);
                                 
                                 if(Object.keys(variables).length > user.step + 1) {
                                     const nextVariable = Object.keys(variables)[user.step + 1];
-                                    await bot.sendMessage(chatId, `Теперь напишите ${variables[nextVariable].name}`);
+                                    await bot.sendMessage(chatId, `"${variables[nextVariable].name}" равна/равен = ?`);
                                     updateUser(chatId, {step: user.step + 1});
                                 } else {
                                     let resFormula = user.formula.formula;
                                     Object.keys(variables).forEach(v => resFormula = resFormula.replaceAll(v, variables[v].value));
-                                    await bot.sendMessage(chatId, `Стоимость "${chats[chatId].formula.name}" составит:\n${eval(resFormula)} рублей`);
+                                    await bot.sendMessage(chatId, `Стоимость приблизительно"${chats[chatId].formula.name}" составит:\n${eval(resFormula)} рублей`);
+                                    updateUser(chatId, {status: "home"});
+                                    delete chats[chatId].step;
                                     delete chats[chatId].formula;
                                 }
                                 break;

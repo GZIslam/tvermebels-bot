@@ -101,7 +101,7 @@ const stateManager = (bot) => {
                         if(Object.keys(formulas).length < 1) {
                             await bot.sendMessage(chatId, "У вас пока нету Формул!", {parse_mode : "HTML", ...editFormulas(type)});
                         } else {
-                            await bot.sendMessage(chatId, "Ваши Формулы:\nВыберите то, что хотите удалить.", {parse_mode : "HTML", ...createButtons(Object.keys(formulas).map(i => "removeFormulas_" + i), "inline_keyboard")});
+                            await bot.sendMessage(chatId, "Ваши Формулы:\nВыберите то, что хотите удалить.", {parse_mode : "HTML", ...createButtons(Object.keys(formulas).map(i => ({callback_data: "removeFormulas_" + i, text: i})), "inline_keyboard")});
                         }
                         break;
                     case nameMap.dev:
